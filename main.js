@@ -20,14 +20,36 @@ let windowManager;
 let initialized = false;
 
 // Image URLs (replace with actual URLs)
-const imageUrls = ['images/a.png', 'images/b.png', 'images/c.png', 'images/d.png'];
+const imageUrls = ['images/pic1.png', 'images/pic2.png', 'images/pic3.png', 'images/pic4.png'];
 const textures = imageUrls.map(url => new t.TextureLoader().load(url));
-const materials = textures.map(texture => new t.MeshBasicMaterial({ map: texture }));
+const materials = textures.map(texture => new t.MeshBasicMaterial({ map: texture, transparent:true, alphaTest: 0.5}));
 
 // get time in seconds since beginning of the day (so that all windows use the same time)
 function getTime() {
     return (new Date().getTime() - today) / 1000.0;
 }
+
+function distanceBetweenPoints(x1, y1, x2, y2) {
+    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+}
+
+function areImagePlanesNearEachOther() {
+    let threshold = 50; // Define your threshold distance here
+    for (let i = 0; i < imagePlanes.length; i++) {
+        for (let j = i + 1; j < imagePlanes.length; j++) {
+            let dist = distanceBetweenPoints(
+                imagePlanes[i].position.x, imagePlanes[i].position.y,
+                imagePlanes[j].position.x, imagePlanes[j].position.y
+            );
+			// console.log(dist)
+            if (dist > threshold) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 
 if (new URLSearchParams(window.location.search).get("clear")) {
     localStorage.clear();
@@ -105,7 +127,7 @@ if (new URLSearchParams(window.location.search).get("clear")) {
 
         for (let i = 0; i < wins.length; i++) {
             let win = wins[i];
-            let geometry = new t.PlaneGeometry(200, 200);
+            let geometry = new t.PlaneGeometry(500, 500);
             let imagePlane = new t.Mesh(geometry, materials[i % materials.length]);
             imagePlane.position.x = win.shape.x + (win.shape.w * 0.5);
             imagePlane.position.y = win.shape.y + (win.shape.h * 0.5);
@@ -143,14 +165,20 @@ if (new URLSearchParams(window.location.search).get("clear")) {
             let win = wins[i];
             // let _t = 83723;
 			let _t = 83908.500
-			console.log(t)
+			// console.log(t)
             let posTarget = { x: win.shape.x + (win.shape.w * .5), y: win.shape.y + (win.shape.h * .5) }
 
             imagePlane.position.x = imagePlane.position.x + (posTarget.x - imagePlane.position.x) * falloff;
             imagePlane.position.y = imagePlane.position.y + (posTarget.y - imagePlane.position.y) * falloff;
+			// console.log(imagePlane.position.x)
+			// console.log(imagePlane.position.y)
             imagePlane.rotation.x = _t * .1;
             imagePlane.rotation.y = _t * .9;
         };
+
+		if (areImagePlanesNearEachOther()) {
+			console.log("YAY");
+		}
 
         renderer.render(scene, camera);
         requestAnimationFrame(render);
@@ -164,4 +192,7 @@ if (new URLSearchParams(window.location.search).get("clear")) {
         camera.updateProjectionMatrix();
         renderer.setSize(width, height);
     }
+
+
+	
 }
